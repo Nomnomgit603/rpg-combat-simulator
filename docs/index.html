@@ -49,15 +49,15 @@
 <div id="setup">
   <label>Choose Character A:
     <select id="charA">
-      <option value="berserker">Berserker</option>
-      <option value="sniper">Sniper</option>
+      <option value="Berserker1">Berserker1</option>
+      <option value="Sniper1">Sniper1</option>
     </select>
   </label>
   <br>
   <label>Choose Character B:
     <select id="charB">
-      <option value="sniper">Sniper</option>
-      <option value="berserker">Berserker</option>
+      <option value="Berserker1">Berserker1</option>
+      <option value="Sniper1">Sniper1</option>
     </select>
   </label>
   <br>
@@ -81,11 +81,13 @@ const setupEl = document.getElementById('setup');
 const controlsEl = document.getElementById('controls');
 const activeCharSel = document.getElementById('activeChar');
 
-const berserkerIcon = 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/berserker.png';
-const sniperIcon = 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/sniper.png';
+const characterIcons = {
+  Berserker1: 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/berserker.png',
+  Sniper1: 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/sniper.png'
+};
 
 let positions = {}; // Will be filled after game starts
-let characterMap = {}; // Maps charA/charB to selected characters
+let characterMap = {}; // Maps charA/charB to selected character names
 
 function drawGrid() {
   gridEl.innerHTML = '';
@@ -97,15 +99,15 @@ function drawGrid() {
       const charA = characterMap.charA;
       const charB = characterMap.charB;
 
-      if (positions[charA].x === x && positions[charA].y === y) {
+      if (positions.charA.x === x && positions.charA.y === y) {
         tile.classList.add(charA);
         const img = document.createElement('img');
-        img.src = charA === 'berserker' ? berserkerIcon : sniperIcon;
+        img.src = characterIcons[charA];
         tile.appendChild(img);
-      } else if (positions[charB].x === x && positions[charB].y === y) {
+      } else if (positions.charB.x === x && positions.charB.y === y) {
         tile.classList.add(charB);
         const img = document.createElement('img');
-        img.src = charB === 'berserker' ? berserkerIcon : sniperIcon;
+        img.src = characterIcons[charB];
         tile.appendChild(img);
       }
 
@@ -116,8 +118,7 @@ function drawGrid() {
 
 function move(direction) {
   const charKey = activeCharSel.value;
-  const char = characterMap[charKey];
-  const pos = positions[char];
+  const pos = positions[charKey];
   if (direction === 'up' && pos.y > 0) pos.y--;
   if (direction === 'down' && pos.y < gridHeight - 1) pos.y++;
   if (direction === 'left' && pos.x > 0) pos.x--;
@@ -132,8 +133,8 @@ function startGame() {
   characterMap.charA = charAChoice;
   characterMap.charB = charBChoice;
 
-  positions[charAChoice] = { x: 2, y: 5 };
-  positions[charBChoice] = { x: 17, y: 5 };
+  positions.charA = { x: 2, y: 5 };
+  positions.charB = { x: 17, y: 5 };
 
   setupEl.style.display = 'none';
   controlsEl.style.display = 'block';
