@@ -9,13 +9,14 @@
       background: #111;
       color: #0f0;
       padding: 20px;
+      display: flex;
+      gap: 30px;
     }
     #grid {
       display: grid;
       grid-template-columns: repeat(20, 32px);
       grid-template-rows: repeat(10, 32px);
       gap: 1px;
-      margin-bottom: 20px;
     }
     .tile {
       width: 32px;
@@ -43,36 +44,48 @@
     #setup {
       margin-bottom: 20px;
     }
+    #sidebar {
+      min-width: 200px;
+    }
+    #statsBox {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #0f0;
+      background: #000;
+    }
   </style>
 </head>
 <body>
-<h2>2D Grid RPG Simulator (Manual Movement with Keyboard + Character Tokens)</h2>
-<div id="setup">
-  <label>Choose Character A:
-    <select id="charA">
-      <option value="Berserker1">Berserker1</option>
-      <option value="Sniper1">Sniper1</option>
-    </select>
-  </label>
-  <br>
-  <label>Choose Character B:
-    <select id="charB">
-      <option value="Berserker1">Berserker1</option>
-      <option value="Sniper1">Sniper1</option>
-    </select>
-  </label>
-  <br>
-  <button onclick="startGame()">Start Game</button>
+<div id="sidebar">
+  <h2>2D Grid RPG Simulator</h2>
+  <div id="setup">
+    <label>Choose Character A:
+      <select id="charA">
+        <option value="Berserker1">Berserker1</option>
+        <option value="Sniper1">Sniper1</option>
+      </select>
+    </label>
+    <br>
+    <label>Choose Character B:
+      <select id="charB">
+        <option value="Berserker1">Berserker1</option>
+        <option value="Sniper1">Sniper1</option>
+      </select>
+    </label>
+    <br>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+  <div id="controls" style="display: none;">
+    <label>Active Character:
+      <select id="activeChar" onchange="updateStats()">
+        <option value="charA">Character A</option>
+        <option value="charB">Character B</option>
+      </select>
+    </label>
+    <div id="statsBox"></div>
+  </div>
 </div>
 <div id="grid"></div>
-<div id="controls" style="display: none;">
-  <label>Active Character:
-    <select id="activeChar">
-      <option value="charA">Character A</option>
-      <option value="charB">Character B</option>
-    </select>
-  </label>
-</div>
 
 <script>
 const gridWidth = 20;
@@ -81,10 +94,36 @@ const gridEl = document.getElementById('grid');
 const setupEl = document.getElementById('setup');
 const controlsEl = document.getElementById('controls');
 const activeCharSel = document.getElementById('activeChar');
+const statsBox = document.getElementById('statsBox');
 
 const characterIcons = {
   Berserker1: 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/berserker.png',
   Sniper1: 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/sniper.png'
+};
+
+const characterStats = {
+  Berserker1: {
+    Strength: 5,
+    Dexterity: 2,
+    Constitution: 2,
+    Health: 22,
+    Mana: 0,
+    PD: 30,
+    DR: 6,
+    Movement: 4,
+    AP: 4
+  },
+  Sniper1: {
+    Strength: 1,
+    Dexterity: 5,
+    Constitution: 3,
+    Health: 23,
+    Mana: 0,
+    PD: 30,
+    DR: 2,
+    Movement: 4,
+    AP: 4
+  }
 };
 
 let positions = {}; // Will be filled after game starts
@@ -137,7 +176,16 @@ function startGame() {
 
   setupEl.style.display = 'none';
   controlsEl.style.display = 'block';
+  updateStats();
   drawGrid();
+}
+
+function updateStats() {
+  const charKey = activeCharSel.value;
+  const charName = characterMap[charKey];
+  const stats = characterStats[charName];
+  statsBox.innerHTML = `<h3>${charName}</h3>` +
+    Object.entries(stats).map(([k, v]) => `${k}: ${v}`).join('<br>');
 }
 
 // Add keyboard input
