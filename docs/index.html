@@ -31,7 +31,7 @@
       height: 100%;
       object-fit: cover;
     }
-    button {
+    button, select {
       margin-top: 10px;
       padding: 10px;
       background: #222;
@@ -39,16 +39,36 @@
       border: 1px solid #0f0;
       cursor: pointer;
     }
+    #setup {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
 <h2>2D Grid RPG Simulator (Manual Movement with Keyboard + Character Tokens)</h2>
-<div id="grid"></div>
-<div>
-  <label>Active Character:
-    <select id="activeChar">
+<div id="setup">
+  <label>Choose Character A:
+    <select id="charA">
       <option value="berserker">Berserker</option>
       <option value="sniper">Sniper</option>
+    </select>
+  </label>
+  <br>
+  <label>Choose Character B:
+    <select id="charB">
+      <option value="sniper">Sniper</option>
+      <option value="berserker">Berserker</option>
+    </select>
+  </label>
+  <br>
+  <button onclick="startGame()">Start Game</button>
+</div>
+<div id="grid"></div>
+<div id="controls" style="display: none;">
+  <label>Active Character:
+    <select id="activeChar">
+      <option value="charA">Character A</option>
+      <option value="charB">Character B</option>
     </select>
   </label>
 </div>
@@ -57,15 +77,15 @@
 const gridWidth = 20;
 const gridHeight = 10;
 const gridEl = document.getElementById('grid');
+const setupEl = document.getElementById('setup');
+const controlsEl = document.getElementById('controls');
 const activeCharSel = document.getElementById('activeChar');
 
 const berserkerIcon = 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/berserker.png';
 const sniperIcon = 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/sniper.png';
 
-let positions = {
-  berserker: { x: 2, y: 5 },
-  sniper: { x: 17, y: 5 }
-};
+let positions = {}; // Will be filled after game starts
+let characterMap = {}; // Maps charA/charB to selected characters
 
 function drawGrid() {
   gridEl.innerHTML = '';
@@ -74,15 +94,18 @@ function drawGrid() {
       const tile = document.createElement('div');
       tile.classList.add('tile');
 
-      if (positions.berserker.x === x && positions.berserker.y === y) {
-        tile.classList.add('berserker');
+      const charA = characterMap.charA;
+      const charB = characterMap.charB;
+
+      if (positions[charA].x === x && positions[charA].y === y) {
+        tile.classList.add(charA);
         const img = document.createElement('img');
-        img.src = berserkerIcon;
+        img.src = charA === 'berserker' ? berserkerIcon : sniperIcon;
         tile.appendChild(img);
-      } else if (positions.sniper.x === x && positions.sniper.y === y) {
-        tile.classList.add('sniper');
+      } else if (positions[charB].x === x && positions[charB].y === y) {
+        tile.classList.add(charB);
         const img = document.createElement('img');
-        img.src = sniperIcon;
+        img.src = charB === 'berserker' ? berserkerIcon : sniperIcon;
         tile.appendChild(img);
       }
 
@@ -92,12 +115,28 @@ function drawGrid() {
 }
 
 function move(direction) {
-  const char = activeCharSel.value;
+  const charKey = activeCharSel.value;
+  const char = characterMap[charKey];
   const pos = positions[char];
   if (direction === 'up' && pos.y > 0) pos.y--;
   if (direction === 'down' && pos.y < gridHeight - 1) pos.y++;
   if (direction === 'left' && pos.x > 0) pos.x--;
   if (direction === 'right' && pos.x < gridWidth - 1) pos.x++;
+  drawGrid();
+}
+
+function startGame() {
+  const charAChoice = document.getElementById('charA').value;
+  const charBChoice = document.getElementById('charB').value;
+
+  characterMap.charA = charAChoice;
+  characterMap.charB = charBChoice;
+
+  positions[charAChoice] = { x: 2, y: 5 };
+  positions[charBChoice] = { x: 17, y: 5 };
+
+  setupEl.style.display = 'none';
+  controlsEl.style.display = 'block';
   drawGrid();
 }
 
@@ -108,9 +147,6 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft') move('left');
   if (e.key === 'ArrowRight') move('right');
 });
-
-// Initial draw
-drawGrid();
 </script>
 </body>
 </html>
