@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RPG Combat Simulator</title>
+  <title>Grid-Based RPG Simulator</title>
   <style>
     body {
       font-family: monospace;
@@ -11,15 +10,28 @@
       color: #0f0;
       padding: 20px;
     }
-    #log {
-      white-space: pre-wrap;
-      background: #000;
-      padding: 10px;
-      border: 1px solid #0f0;
-      height: 400px;
-      overflow-y: scroll;
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(20, 32px);
+      grid-template-rows: repeat(10, 32px);
+      gap: 1px;
+      margin-bottom: 20px;
     }
-    button, select {
+    .tile {
+      width: 32px;
+      height: 32px;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #222;
+    }
+    .berserker img, .sniper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    button {
       margin-top: 10px;
       padding: 10px;
       background: #222;
@@ -30,145 +42,75 @@
   </style>
 </head>
 <body>
-<h2>RPG Combat Simulator (Select Characters)</h2>
-<label for="charA">Choose Character A:</label>
-<select id="charA">
-  <option value="Berserker1">Berserker1</option>
-  <option value="Sniper1">Sniper1</option>
-</select>
-<br>
-<label for="charB">Choose Character B:</label>
-<select id="charB">
-  <option value="Sniper1">Sniper1</option>
-  <option value="Berserker1">Berserker1</option>
-</select>
-<br>
-<button onclick="runCombat()">Run Combat</button>
-<div id="log"></div>
+<h2>2D Grid RPG Simulator (Manual Movement with Keyboard + Character Tokens)</h2>
+<div id="grid"></div>
+<div>
+  <label>Active Character:
+    <select id="activeChar">
+      <option value="berserker">Berserker</option>
+      <option value="sniper">Sniper</option>
+    </select>
+  </label>
+</div>
 
 <script>
-class Character {
-  constructor(name, hp, ap, pd, dr, attacks) {
-    this.name = name;
-    this.maxHp = hp;
-    this.hp = hp;
-    this.ap = ap;
-    this.pd = pd;
-    this.dr = dr;
-    this.attacks = attacks;
-    this.wasAliveLastTurn = true;
-  }
+const gridWidth = 20;
+const gridHeight = 10;
+const gridEl = document.getElementById('grid');
+const activeCharSel = document.getElementById('activeChar');
 
-  isAlive() {
-    return this.hp > 0;
-  }
-}
+const berserkerIcon = 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/berserker.png';
+const sniperIcon = 'https://raw.githubusercontent.com/Nomnomgit603/rpg-combat-simulator/main/docs/assets/sniper.png';
 
-function rollDice(sides, count = 1) {
-  let total = 0;
-  for (let i = 0; i < count; i++) {
-    total += Math.floor(Math.random() * sides) + 1;
-  }
-  return total;
-}
+let positions = {
+  berserker: { x: 2, y: 5 },
+  sniper: { x: 17, y: 5 }
+};
 
-function log(msg) {
-  const logBox = document.getElementById('log');
-  logBox.innerText += msg + "\n";
-  logBox.scrollTop = logBox.scrollHeight;
-}
+function drawGrid() {
+  gridEl.innerHTML = '';
+  for (let y = 0; y < gridHeight; y++) {
+    for (let x = 0; x < gridWidth; x++) {
+      const tile = document.createElement('div');
+      tile.classList.add('tile');
 
-function createCharacter(name) {
-  if (name === "Berserker1") {
-    return new Character("Berserker1", 22, 4, 30, 6, [
-      { name: "Heavy Attack", cost: 2, hitMod: 3, dmgDice: 12, diceCount: 2 }
-    ]);
-  }
-  if (name === "Sniper1") {
-    return new Character("Sniper1", 23, 4, 30, 2, [
-      { name: "Aimed Attack", cost: 3, hitMod: 19, dmgDice: 10, diceCount: 1 },
-      { name: "Normal Attack", cost: 2, hitMod: 9, dmgDice: 10, diceCount: 1 },
-      { name: "Quick Attack", cost: 1, hitMod: -1, dmgDice: 10, diceCount: 1 }
-    ]);
-  }
-  return null;
-}
-
-function runCombat() {
-  document.getElementById('log').innerText = '';
-  const nameA = document.getElementById("charA").value;
-  const nameB = document.getElementById("charB").value;
-
-  const a = createCharacter(nameA);
-  const b = createCharacter(nameB);
-
-  let round = 1;
-  let combatOver = false;
-
-  while (!combatOver) {
-    log(`--- Round ${round} ---`);
-    a.ap = 4;
-    b.ap = 4;
-
-    a.wasAliveLastTurn = a.isAlive();
-    b.wasAliveLastTurn = b.isAlive();
-
-    // Character A turn
-    if (a.wasAliveLastTurn) {
-      for (let atk of a.attacks) {
-        while (a.ap >= atk.cost && b.isAlive()) {
-          a.ap -= atk.cost;
-          const hitRoll = rollDice(50) + atk.hitMod;
-          const overhitDice = Math.floor((hitRoll - b.pd) / 10);
-          log(`${a.name} uses ${atk.name}: ${hitRoll} vs PD ${b.pd} (Overhit Dice: ${overhitDice})`);
-          if (hitRoll >= b.pd) {
-            const dmg = rollDice(atk.dmgDice, atk.diceCount + overhitDice);
-            const finalDmg = Math.max(dmg - b.dr, 0);
-            b.hp -= finalDmg;
-            log(`${a.name} hits for ${dmg} - ${b.dr} DR = ${finalDmg} damage! (${Math.max(b.hp, 0)} HP left)`);
-          } else {
-            log(`${a.name} misses!`);
-          }
-        }
+      if (positions.berserker.x === x && positions.berserker.y === y) {
+        tile.classList.add('berserker');
+        const img = document.createElement('img');
+        img.src = berserkerIcon;
+        tile.appendChild(img);
+      } else if (positions.sniper.x === x && positions.sniper.y === y) {
+        tile.classList.add('sniper');
+        const img = document.createElement('img');
+        img.src = sniperIcon;
+        tile.appendChild(img);
       }
-    }
 
-    // Character B turn
-    if (b.wasAliveLastTurn) {
-      for (let atk of b.attacks) {
-        while (b.ap >= atk.cost && a.isAlive()) {
-          b.ap -= atk.cost;
-          const hitRoll = rollDice(50) + atk.hitMod;
-          const overhitDice = Math.floor((hitRoll - a.pd) / 10);
-          log(`${b.name} uses ${atk.name}: ${hitRoll} vs PD ${a.pd} (Overhit Dice: ${overhitDice})`);
-          if (hitRoll >= a.pd) {
-            const dmg = rollDice(atk.dmgDice, atk.diceCount + overhitDice);
-            const finalDmg = Math.max(dmg - a.dr, 0);
-            a.hp -= finalDmg;
-            log(`${b.name} hits for ${dmg} - ${a.dr} DR = ${finalDmg} damage! (${Math.max(a.hp, 0)} HP left)`);
-          } else {
-            log(`${b.name} misses!`);
-          }
-        }
-      }
-    }
-
-    round++;
-
-    if (!a.isAlive() && !b.isAlive()) {
-      log(`\nCombat ends in a tie. Both combatants have fallen.`);
-      combatOver = true;
-    } else if (!a.isAlive()) {
-      log(`\nCombat ends. Winner: ${b.name}`);
-      log(`Remaining HP: ${Math.max(b.hp, 0)} HP`);
-      combatOver = true;
-    } else if (!b.isAlive()) {
-      log(`\nCombat ends. Winner: ${a.name}`);
-      log(`Remaining HP: ${Math.max(a.hp, 0)} HP`);
-      combatOver = true;
+      gridEl.appendChild(tile);
     }
   }
 }
+
+function move(direction) {
+  const char = activeCharSel.value;
+  const pos = positions[char];
+  if (direction === 'up' && pos.y > 0) pos.y--;
+  if (direction === 'down' && pos.y < gridHeight - 1) pos.y++;
+  if (direction === 'left' && pos.x > 0) pos.x--;
+  if (direction === 'right' && pos.x < gridWidth - 1) pos.x++;
+  drawGrid();
+}
+
+// Add keyboard input
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowUp') move('up');
+  if (e.key === 'ArrowDown') move('down');
+  if (e.key === 'ArrowLeft') move('left');
+  if (e.key === 'ArrowRight') move('right');
+});
+
+// Initial draw
+drawGrid();
 </script>
 </body>
 </html>
